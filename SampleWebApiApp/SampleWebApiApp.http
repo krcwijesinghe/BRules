@@ -1,0 +1,21 @@
+@SampleWebApiApp_HostAddress = http://localhost:5025
+
+GET https://localhost:7012/items/action1?departmentId=1&param1=50
+Accept: application/json
+
+###
+
+GET https://localhost:7012/items/action1?departmentId=1&param1=200
+Accept: application/json
+
+###
+
+GET https://localhost:7012/items/action1?departmentId=1&param1=-10
+Accept: application/json
+
+###
+
+GET https://localhost:7012/items/action1?departmentId=2&param1=10
+Accept: application/json
+
+###

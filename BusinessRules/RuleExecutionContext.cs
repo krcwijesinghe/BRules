@@ -11,6 +11,7 @@ internal class RuleExecutionContext
     public IDictionary<string, object?> LocalVariables { get; }
     public IList<string> EvaluatedRules { get; } = new List<string>();
     public IDictionary<string, RuleVariable> Variables { get; }
+    public IList<string> FunctionNames { get; }
 
     public HashSet<string> ParameterNames { get; } = new();
 
@@ -21,13 +22,15 @@ internal class RuleExecutionContext
                                 ITextTemplateEngine textTemplateEngine,
                                 IRuleExecutionEngine ruleExecutionEngine,
                                 IDictionary<string, object?> parameters,
-                                IDictionary<string, RuleVariable> variables)
+                                IDictionary<string, RuleVariable> variables,
+                                IList<string> functionNames)
     {
         EvaludationEngine = evaluationEngine ?? throw new ArgumentNullException(nameof(evaluationEngine));
         TextTemplateEngine = textTemplateEngine ?? throw new ArgumentNullException(nameof(textTemplateEngine));
         RuleExecutionEngine = ruleExecutionEngine ?? throw new ArgumentNullException(nameof(ruleExecutionEngine)); ;
         LocalVariables = parameters.ToDictionary(p => p.Key, p => p.Value); //Clone
         Variables = variables.ToDictionary(v => v.Key, v => v.Value); //Clone
+        FunctionNames = functionNames.ToList(); //Clone
         IsValid = true;
 
         ParameterNames.UnionWith(parameters.Keys);
@@ -45,6 +48,7 @@ internal class RuleExecutionContext
         {
             if (!initialization &&
                 (variable.Type == RuleVariableType.ValueProvider ||
+                 variable.Type == RuleVariableType.SimpleVariable ||
                  variable.Type == RuleVariableType.Aggregate))
             {
                 throw new InvalidOperationException($"Variable '{name}' cannot be assigned to");
@@ -81,6 +85,6 @@ internal class RuleExecutionContext
 
     public RuleExecutionContext Clone()
     {
-        return new RuleExecutionContext(EvaludationEngine, TextTemplateEngine, RuleExecutionEngine, LocalVariables, Variables);
+        return new RuleExecutionContext(EvaludationEngine, TextTemplateEngine, RuleExecutionEngine, LocalVariables, Variables, FunctionNames);
     }
 }

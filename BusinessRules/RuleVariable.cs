@@ -7,16 +7,30 @@ internal class RuleVariable
     public Delegate? ValueProvider { get; set; }
     public IList<string>? ValueProviderParameters { get; set; }
     public AggregateVariable? Aggregate { get; set; }
+    public SimpleVariable? SimpleVariable { get; set; }
+    public FieldValueVariable? FieldValue { get; set; }
     public bool OutputVariable { get; set; }
     public Type? DataType { get; set; }
+    public IList<string>? VariablesToPreload { get; set; }
+
 
     public async Task<object?> GetValue(RuleExecutionContext context)
     {
+        if (VariablesToPreload != null)
+        {
+            foreach (var varName in VariablesToPreload)
+            {
+                await context.Preload(varName);
+            }
+        }
+
         var value = Type switch
         {
             RuleVariableType.DefaultValue => DefaultValue,
             RuleVariableType.ValueProvider => await EvaluateValueProvider(context),
             RuleVariableType.Aggregate => await Aggregate!.GetValue(context),
+            RuleVariableType.SimpleVariable => await SimpleVariable!.GetValue(context),
+            RuleVariableType.FieldValue => await FieldValue!.GetValue(context),
             _ => throw new InvalidOperationException("Unknown variable type")
         };
 
@@ -87,6 +101,8 @@ internal enum RuleVariableType
     DefaultValue = 0,
     ValueProvider = 1,
     Aggregate = 2,
+    FieldValue = 3,
+    SimpleVariable = 4,
 }
 
 

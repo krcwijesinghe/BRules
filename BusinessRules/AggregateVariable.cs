@@ -8,8 +8,6 @@ internal class AggregateVariable
     public required  string AggregateFunction { get; set; }
     public IList<Rule>? SubRules { get; set; }
 
-    public AggregateVariable() { }
-
     public async Task<object?> GetValue(RuleExecutionContext context)
     {
         var collection = await context.GetValue(CollectionVariable) as IEnumerable<IDictionary<string, object?>>;

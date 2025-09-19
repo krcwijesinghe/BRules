@@ -1,4 +1,5 @@
 ﻿using BRules;
+using Ionic.BZip2;
 using Jint;
 
 namespace UnitTests
@@ -639,6 +640,81 @@ namespace UnitTests
             Assert.IsTrue(result.EvaluatedRules.Contains("Global(1.0).TestRule1"));
             Assert.IsTrue(result.EvaluatedRules.Contains("Global(1.0).TestRule3"));
         }
+
+
+        [TestMethod]
+        public async Task Lazy_loading_multiple_variables_should_be_evaluated_correctly()
+        {
+            var tagert = RulesEngineBuilder.Create()
+                .UseJintEvaluationEngine()
+                .AddParameter<int>("param1")
+                .AddVariable("result", 0, outputVariable: true,  dataType: typeof(int))
+                .AddLayerVariables(["var1","var2"], ["param1"], (int p1) => new { var1 = p1 * 2, var2 = p1 * 3 }) // lazy loading values for var1 and var2
+                .Build(
+                    new RuleSet("Global", "1.0", [
+                        new (){
+                            Name = "TestRule1",
+                            Type = "assign",
+                            Variable = "result",
+                            VariablesToPreload = ["var1", "var2"],
+                            Expression = "var1 + var2"
+                        }
+                    ],
+                    [
+                        new () { Name = "param1", Type = typeof(int).FullName! },
+                    ]));
+
+            var parameters = new Dictionary<string, object?>
+            {
+                { "param1", 4 },
+            };
+
+            var result = await tagert.ExecuteAsync(parameters);
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.OutputParameters.ContainsKey("result"));
+            Assert.AreEqual(20, result.OutputParameters["result"]);
+            Assert.AreEqual(1, result.EvaluatedRules.Count);
+            Assert.IsTrue(result.EvaluatedRules.Contains("Global(1.0).TestRule1"));
+        }
+
+        [TestMethod]
+        public async Task Simple_variables_should_be_evaluated_correctly()
+        {
+            var tagert = RulesEngineBuilder.Create()
+                .UseJintEvaluationEngine()
+                .AddParameter<int>("param1")
+                .AddVariable("result", 0, outputVariable: true, dataType: typeof(int))
+                .Build(
+                    new RuleSet("Global", "1.0", [
+                        new (){
+                            Name = "TestRule1",
+                            Type = "assign",
+                            Variable = "result",
+                            VariablesToPreload = ["var1", "var2"],
+                            Expression = "var1 + var2"
+                        }
+                    ],
+                    [
+                        new () { Name = "param1", Type = typeof(int).FullName! },
+                    ],
+                    simpleVariables: [
+                        new SimpleVariableDefinition() { Name = "var1", Expression = "5" },
+                        new SimpleVariableDefinition() { Name = "var2", Expression = "param1 * 3" },
+                    ]));
+
+            var parameters = new Dictionary<string, object?>
+            {
+                { "param1", 4 },
+            };
+
+            var result = await tagert.ExecuteAsync(parameters);
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.OutputParameters.ContainsKey("result"));
+            Assert.AreEqual(17, result.OutputParameters["result"]);
+            Assert.AreEqual(1, result.EvaluatedRules.Count);
+            Assert.IsTrue(result.EvaluatedRules.Contains("Global(1.0).TestRule1"));
+        }
+
 
         [TestMethod]
         public async Task Custom_functions_should_be_evaluated_correctly()

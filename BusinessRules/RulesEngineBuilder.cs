@@ -73,7 +73,7 @@ public class RulesEngineBuilder : IRulesEngineBuilder
     }
 
     /// <summary>
-    /// Add a variable whoes value is loaded at the first using using the provided value provider function.
+    /// Add a variable whoes value is loaded at the first time using the provided value provider function.
     /// This value provider function can be asynchronous
     /// This variable can be used by the rule sets associated with the rules engine to be built
     /// This variable must be preloaded before use
@@ -90,7 +90,7 @@ public class RulesEngineBuilder : IRulesEngineBuilder
     /// <param name="dataType">The expected data type of the variable. This value is optional and can be <see langword="null"/>.</param>
     /// <returns>The current instance of <see cref="IRulesEngineBuilder"/> to allow method chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="name"/> is <see langword="null"/>.</exception>
-    public IRulesEngineBuilder AddLazyVariable(string name, IList<string> valueProviderParameters, Delegate valueProvider, bool outputVariable = false, Type? dataType = null)
+    public IRulesEngineBuilder AddLazyVariable(string name, IList<string> valueProviderParameters, Delegate valueProvider, Type? dataType = null)
     {
         if (name == null) throw new ArgumentNullException(nameof(name));
 
@@ -100,8 +100,44 @@ public class RulesEngineBuilder : IRulesEngineBuilder
             DataType = dataType,
             ValueProvider = valueProvider,
             ValueProviderParameters = valueProviderParameters,
-            OutputVariable = outputVariable
+            OutputVariable = false
         });
+        return this;
+    }
+
+    /// <summary>
+    /// Add a set of variables whoes value is loaded at the first time using the provided value provider function.
+    /// The output of the function should be an object with public properties that maches with the provided variable names or an IDictionary<string,object?>
+    /// This value provider function can be asynchronous
+    /// These variables can be used by the rule sets associated with the rules engine to be built
+    /// These variables must be preloaded before use
+    /// Note that the value of these variables must be loaded at the rules set level, if used in if conditions
+    /// </summary>
+    /// <remarks>This method allows you to define a variable whose value is determined lazily at runtime 
+    /// using the specified <paramref name="valueProvider"/> delegate. The variable can optionally  be included in the
+    /// output by setting <paramref name="outputVariable"/> to <see langword="true"/>.</remarks>
+    /// <param name="name">The name of the variable. This value cannot be <see langword="null"/>.</param>
+    /// <param name="valueProviderParameters">A list of parameters to be passed to the value provider delegate.</param>
+    /// <param name="valueProvider">A delegate that provides the value for the variable when evaluated.</param>
+    /// <param name="outputVariable">A value indicating whether the variable should be included in the output.  The default is <see
+    /// langword="false"/>.</param>
+    /// <param name="dataType">The expected data type of the variable. This value is optional and can be <see langword="null"/>.</param>
+    /// <returns>The current instance of <see cref="IRulesEngineBuilder"/> to allow method chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="name"/> is <see langword="null"/>.</exception>
+    public IRulesEngineBuilder AddLayerVariables(IList<string> variableNames, IList<string> valueProviderParameters, Delegate valueProvider, Type? dataType = null)
+    {
+        var variableId = Guid.NewGuid().ToString();
+        AddLazyVariable(variableId, valueProviderParameters, valueProvider, dataType);
+        foreach (var name in variableNames)
+        {
+            _variables.Add(name, new RuleVariable()
+            {
+                Type = RuleVariableType.FieldValue,
+                DataType = dataType,
+                FieldValue = new FieldValueVariable() { FieldName = name, RecordVariable = variableId },
+                OutputVariable = false
+            });
+        }
         return this;
     }
 
@@ -221,9 +257,27 @@ public class RulesEngineBuilder : IRulesEngineBuilder
                             ? GetRules(ruleSet, aggregateVariable.SubRules)
                             : null,
                     },
-                    OutputVariable = true
+                    VariablesToPreload = aggregateVariable.VariablesToPreload,
+                    OutputVariable = false
                 };
                 _variables.Add(aggregateVariable.Name, ruleVariable);
+            }
+        }
+
+        if (ruleSet.SimpleVariables != null)
+        {
+            foreach (var simpleVariable in ruleSet.SimpleVariables)
+            {
+                _variables.Add(simpleVariable.Name, new RuleVariable()
+                {
+                    Type = RuleVariableType.SimpleVariable,
+                    SimpleVariable = new SimpleVariable()
+                    {
+                        Expression = simpleVariable.Expression
+                    },
+                    VariablesToPreload = simpleVariable.VariablesToPreload,
+                    OutputVariable = false
+                });
             }
         }
 

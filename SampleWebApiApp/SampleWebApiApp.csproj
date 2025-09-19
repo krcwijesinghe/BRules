@@ -7,12 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BRules.Engine" Version="1.0.0" />
+    <PackageReference Include="BRules.JInt" Version="1.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.8" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\BRules.JInt\BRules.JInt.csproj" />
-    <ProjectReference Include="..\BusinessRules\BRules.Engine.csproj" />
   </ItemGroup>
 
 </Project>

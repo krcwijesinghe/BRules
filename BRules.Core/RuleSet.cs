@@ -8,6 +8,7 @@ public class RuleSet
     public IList<ParameterDefinition> Parameters { get; set; }
     public IList<string>? PreloadVariables { get; set; }
     public IList<AggregateVariableDefinition>? AggregateVariables { get; set; }
+    public IList<SimpleVariableDefinition>? SimpleVariables { get; set; }
 
     public RuleSet()
     {       
@@ -19,7 +20,8 @@ public class RuleSet
         IList<RuleDefinition> rules,
         IList<ParameterDefinition> parameters,
         IList<string>? preloadVariables = null,
-        IList<AggregateVariableDefinition>? aggregateVariable = null)
+        IList<AggregateVariableDefinition>? aggregateVariable = null,
+        IList<SimpleVariableDefinition>? simpleVariables = null)
     {
         Name = name;
         Version = version;
@@ -27,6 +29,7 @@ public class RuleSet
         Parameters = parameters;
         PreloadVariables = preloadVariables;
         AggregateVariables = aggregateVariable;
+        SimpleVariables = simpleVariables;
     }
 }
 
@@ -58,6 +61,14 @@ public class AggregateVariableDefinition
     public string? FilterCondition { get; set; }
     public required string AggregateFunction { get; set; }
     public IList<RuleDefinition>? SubRules { get; set; }
+    public IList<string>? VariablesToPreload { get; set; }
+}
+
+public class SimpleVariableDefinition
+{
+    public required string Name { get; set; }
+    public required string Expression { get; set; }
+    public IList<string>? VariablesToPreload { get; set; }
 }
 
 public class ParameterDefinition

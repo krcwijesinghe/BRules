@@ -47,7 +47,7 @@ internal class RulesEngine : IRulesEngine, IRuleExecutionEngine
         if (parameters == null) throw new ArgumentNullException(nameof(parameters));
         var inputParameters = LoadParameters(parameters);
 
-        RuleExecutionContext context = new RuleExecutionContext(_evaluationEngine, _textTemplateEngine, this, inputParameters, _variables);
+        RuleExecutionContext context = new RuleExecutionContext(_evaluationEngine, _textTemplateEngine, this, inputParameters, _variables, _functions.Keys.ToList());
 
         foreach (var variableName in _preloadVariables)
         {
@@ -154,7 +154,7 @@ internal class RulesEngine : IRulesEngine, IRuleExecutionEngine
         if (string.IsNullOrEmpty(rule.Variable)) throw new ArgumentException("Variable cannot be null");
         if (string.IsNullOrEmpty(rule.Expression)) throw new ArgumentException("Expression cannot be null");
         
-        var value = _evaluationEngine.EvaluateExpression(rule.Expression, context.LocalVariables, _functions.Keys.ToList());
+        var value = _evaluationEngine.EvaluateExpression(rule.Expression, context.LocalVariables, context.FunctionNames);
         context.SetValue(rule.Variable, value);
         return true;
     }
@@ -198,7 +198,7 @@ internal class RulesEngine : IRulesEngine, IRuleExecutionEngine
 
         string GetCacheKey(string functionName, object[] args)
         {
-            var keyBuilder = new StringBuilder(functionName);
+            var keyBuilder = new StringBuilder("ext_func_" + functionName);
             foreach (var arg in args)
             {
                 keyBuilder.Append($"|{arg?.GetHashCode()}");

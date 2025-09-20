@@ -25,6 +25,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleConsoleApp", "SampleConsoleApp\SampleConsoleApp.csproj", "{BB717575-BBD5-4C0D-9E18-6FBED3BD2648}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,12 +61,17 @@ Global
 		{3F49264A-761E-4859-9B47-CA9CAA5B4BEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F49264A-761E-4859-9B47-CA9CAA5B4BEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F49264A-761E-4859-9B47-CA9CAA5B4BEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB717575-BBD5-4C0D-9E18-6FBED3BD2648}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB717575-BBD5-4C0D-9E18-6FBED3BD2648}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB717575-BBD5-4C0D-9E18-6FBED3BD2648}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB717575-BBD5-4C0D-9E18-6FBED3BD2648}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{B502CC4F-4D1C-49E5-8D06-ACC729FF9AFF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{BB717575-BBD5-4C0D-9E18-6FBED3BD2648} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {045C5B34-262D-4C02-9770-02CABB2CE9AC}

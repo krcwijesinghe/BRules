@@ -125,7 +125,7 @@ public class RulesEngineBuilder : IRulesEngineBuilder
     /// <param name="dataType">The expected data type of the variable. This value is optional and can be <see langword="null"/>.</param>
     /// <returns>The current instance of <see cref="IRulesEngineBuilder"/> to allow method chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="name"/> is <see langword="null"/>.</exception>
-    public IRulesEngineBuilder AddLayerVariables(IList<string> variableNames, IList<string> valueProviderParameters, Delegate valueProvider, Type? dataType = null)
+    public IRulesEngineBuilder AddLazyVariables(IList<string> variableNames, IList<string> valueProviderParameters, Delegate valueProvider, Type? dataType = null)
     {
         var variableId = Guid.NewGuid().ToString();
         AddLazyVariable(variableId, valueProviderParameters, valueProvider, dataType);

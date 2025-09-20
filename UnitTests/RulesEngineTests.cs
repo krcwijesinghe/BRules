@@ -649,7 +649,7 @@ namespace UnitTests
                 .UseJintEvaluationEngine()
                 .AddParameter<int>("param1")
                 .AddVariable("result", 0, outputVariable: true,  dataType: typeof(int))
-                .AddLayerVariables(["var1","var2"], ["param1"], (int p1) => new { var1 = p1 * 2, var2 = p1 * 3 }) // lazy loading values for var1 and var2
+                .AddLazyVariables(["var1","var2"], ["param1"], (int p1) => new { var1 = p1 * 2, var2 = p1 * 3 }) // lazy loading values for var1 and var2
                 .Build(
                     new RuleSet("Global", "1.0", [
                         new (){

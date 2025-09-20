@@ -2,8 +2,9 @@
 
 public class RuleFunction
 {
-    public required Delegate Delegate { get; set; }
-    public bool CacheResults { get; set; }
+    public IList<string>? VariablesToPreload { get; set; }
+    public required IList<string> Parameters { get; set; }
+    public required string Expression { get; set; }
 }
 
 

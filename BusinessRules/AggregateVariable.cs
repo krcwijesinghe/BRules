@@ -51,12 +51,12 @@ internal class AggregateVariable
 
         object? GetValue(IDictionary<string, object?> row)
         {
-            return context.EvaludationEngine.EvaluateExpression(Expression, row);
+            return context.EvaludationEngine.EvaluateExpression(Expression, row, context);
         }
 
         bool IsFiltered(IDictionary<string, object?> row)
         {
-            return context.EvaludationEngine.EvaluateCondition(row, FilterCondition);
+            return context.EvaludationEngine.EvaluateCondition(row, FilterCondition, context);
         }
     }
 }

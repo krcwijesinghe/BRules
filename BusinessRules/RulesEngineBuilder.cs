@@ -11,8 +11,9 @@ public class RulesEngineBuilder : IRulesEngineBuilder
 {
     private IEvaluationEngine? _evaludationEngine = null;
     private ITextTemplateEngine? _textTemplateEngine = null;
-    private IDictionary<string, RuleVariable> _variables = new Dictionary<string, RuleVariable>();
     private IDictionary<string, RuleFunction> _functions = new Dictionary<string, RuleFunction>();
+    private IDictionary<string, RuleVariable> _variables = new Dictionary<string, RuleVariable>();
+    private IDictionary<string, ExternalRuleFunction> _externalFunctions = new Dictionary<string, ExternalRuleFunction>();
 
     private readonly List<ParameterDef> _parameters = new();
 
@@ -157,7 +158,7 @@ public class RulesEngineBuilder : IRulesEngineBuilder
         if (name == null) throw new ArgumentNullException(nameof(name));
         if (function == null) throw new ArgumentNullException(nameof(function));
 
-        _functions.Add(name, new RuleFunction() { Delegate = function, CacheResults = cacheResult });
+        _externalFunctions.Add(name, new ExternalRuleFunction() { Delegate = function, CacheResults = cacheResult });
         return this;
     }
 
@@ -216,7 +217,7 @@ public class RulesEngineBuilder : IRulesEngineBuilder
             LoadRuleSet(ruleSet, rules, parameters, variables, preloadVariables);
         }
 
-        return new RulesEngine(rules, _variables, _functions, parameters, preloadVariables, evaluationEngine, textTemplateEngine);
+        return new RulesEngine(rules, _variables, _functions, _externalFunctions, parameters, preloadVariables, evaluationEngine, textTemplateEngine);
     }
 
     /// <summary>
@@ -278,6 +279,19 @@ public class RulesEngineBuilder : IRulesEngineBuilder
                     VariablesToPreload = simpleVariable.VariablesToPreload,
                     OutputVariable = false
                 });
+            }
+        }
+
+        if (ruleSet.RuleFunctionDefinitions != null)
+        {
+            foreach (var ruleFunction in ruleSet.RuleFunctionDefinitions)
+            {
+                _functions[ruleFunction.Name] = new RuleFunction()
+                {
+                    Expression = ruleFunction.Expression,
+                    Parameters = ruleFunction.Parameters,
+                    VariablesToPreload = ruleFunction.VariablesToPreload,
+                };
             }
         }
 

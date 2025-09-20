@@ -6,7 +6,7 @@ internal class SimpleVariable
 
     public Task<object?> GetValue(RuleExecutionContext context)
     {
-        return Task.FromResult(context.EvaludationEngine.EvaluateExpression(Expression, context.LocalVariables, context.FunctionNames));
+        return Task.FromResult(context.EvaludationEngine.EvaluateExpression(Expression, context.LocalVariables, context, context.FunctionNames));
     }
 }
 

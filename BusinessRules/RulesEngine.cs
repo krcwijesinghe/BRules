@@ -8,17 +8,19 @@ internal class RulesEngine : IRulesEngine, IRuleExecutionEngine
 {
     private IList<Rule> _rules;
     private IDictionary<string, RuleVariable> _variables;
+    private IDictionary<string, RuleFunction> _functions;
     private IEvaluationEngine _evaluationEngine;
     private ITextTemplateEngine _textTemplateEngine;
     private IList<ParameterDefinition> _parameterDefs;
     private HashSet<string> _preloadVariables = new();
-    private IDictionary<string, RuleFunction> _functions = new Dictionary<string, RuleFunction>();
+    private IDictionary<string, ExternalRuleFunction> _externalFunctions = new Dictionary<string, ExternalRuleFunction>();
     private ConcurrentDictionary<string, object?> _functionCache = new();
 
     internal RulesEngine(
         IList<Rule> rules,
         IDictionary<string, RuleVariable> variables,
-        IDictionary<string, RuleFunction> functions,    
+        IDictionary<string, RuleFunction> functions,
+        IDictionary<string, ExternalRuleFunction> externalFunctions,    
         IList<ParameterDefinition> parameterDefs,
         HashSet<string> preloadVariables,
         IEvaluationEngine evaluationEngine,
@@ -27,6 +29,7 @@ internal class RulesEngine : IRulesEngine, IRuleExecutionEngine
         _rules = rules;
         _variables = variables;
         _functions = functions;
+        _externalFunctions = externalFunctions;
         _parameterDefs = parameterDefs;
         _preloadVariables = preloadVariables;
         _textTemplateEngine = textTemplateEngine;
@@ -47,7 +50,7 @@ internal class RulesEngine : IRulesEngine, IRuleExecutionEngine
         if (parameters == null) throw new ArgumentNullException(nameof(parameters));
         var inputParameters = LoadParameters(parameters);
 
-        RuleExecutionContext context = new RuleExecutionContext(_evaluationEngine, _textTemplateEngine, this, inputParameters, _variables, _functions.Keys.ToList());
+        RuleExecutionContext context = new RuleExecutionContext(_evaluationEngine, _textTemplateEngine, this, inputParameters, _variables, _functions, _externalFunctions.Keys.ToList());
 
         foreach (var variableName in _preloadVariables)
         {
@@ -121,7 +124,7 @@ internal class RulesEngine : IRulesEngine, IRuleExecutionEngine
             if (rule.ConditionType == "if" || rule.ConditionType == "else if")
             {
                 if (string.IsNullOrEmpty(rule.Condition)) throw new ArgumentException("Condition cannot be null for condition type 'if' or 'else if'");
-                bool result = _evaluationEngine.EvaluateCondition(context.LocalVariables, rule.Condition);
+                bool result = _evaluationEngine.EvaluateCondition(context.LocalVariables, rule.Condition, context);
                 lastConditionValue = result;    
                 if (!result) continue;
             }
@@ -154,7 +157,7 @@ internal class RulesEngine : IRulesEngine, IRuleExecutionEngine
         if (string.IsNullOrEmpty(rule.Variable)) throw new ArgumentException("Variable cannot be null");
         if (string.IsNullOrEmpty(rule.Expression)) throw new ArgumentException("Expression cannot be null");
         
-        var value = _evaluationEngine.EvaluateExpression(rule.Expression, context.LocalVariables, context.FunctionNames);
+        var value = _evaluationEngine.EvaluateExpression(rule.Expression, context.LocalVariables, context, context.FunctionNames);
         context.SetValue(rule.Variable, value);
         return true;
     }
@@ -183,28 +186,56 @@ internal class RulesEngine : IRulesEngine, IRuleExecutionEngine
         return true;
     }
 
-    private object? EvaluateFunction(string name, object[] parameters)
+    private object? EvaluateFunction(string name, object[] parameters, IRulesExecutionContext rulesContext)
     {
-        if (_functions == null) throw new ArgumentException($"Invalid function name '{name}'");
-        if (_functions.TryGetValue(name, out var function) == false) throw new ArgumentException($"Invalid function name '{name}'");
+        var context = rulesContext as RuleExecutionContext ?? throw new ArgumentException("Invalid rules execution context");
 
-        if (function.CacheResults)
+        if (_externalFunctions != null && _externalFunctions.TryGetValue(name, out var function))
         {
-            var cacheKey = GetCacheKey(name, parameters);
-            return _functionCache.GetOrAdd(cacheKey, _ => Invoke(function.Delegate, parameters));
-        }
-
-        return Invoke(function.Delegate, parameters);
-
-        string GetCacheKey(string functionName, object[] args)
-        {
-            var keyBuilder = new StringBuilder("ext_func_" + functionName);
-            foreach (var arg in args)
+            if (function.CacheResults)
             {
-                keyBuilder.Append($"|{arg?.GetHashCode()}");
+                var cacheKey = GetCacheKey(name, parameters);
+                return _functionCache.GetOrAdd(cacheKey, _ => Invoke(function.Delegate, parameters));
             }
-            return keyBuilder.ToString();
+
+            return Invoke(function.Delegate, parameters);
+
+            string GetCacheKey(string functionName, object[] args)
+            {
+                var keyBuilder = new StringBuilder("ext_func_" + functionName);
+                foreach (var arg in args)
+                {
+                    keyBuilder.Append($"|{arg?.GetHashCode()}");
+                }
+                return keyBuilder.ToString();
+            }
         }
+
+        if (context.Functions != null && context.Functions.TryGetValue(name, out var ruleFunction))
+        {
+            if (string.IsNullOrEmpty(ruleFunction.Expression)) throw new ArgumentException($"Expression cannot be null for function '{name}'");
+            if (parameters.Length != ruleFunction.Parameters.Count)
+            {
+                throw new ArgumentException($"Function '{name}' expects {ruleFunction.Parameters.Count} parameters, but {parameters.Length} were provided.");
+            }
+
+            if (ruleFunction.VariablesToPreload != null)
+            {
+                foreach (var variableName in ruleFunction.VariablesToPreload)
+                {
+                    context.Preload(variableName).GetAwaiter().GetResult();
+                }
+            }
+            var localVars = new Dictionary<string, object?>(context.LocalVariables);
+            for (int i = 0; i < ruleFunction.Parameters.Count; i++)
+            {
+                localVars[ruleFunction.Parameters[i]] = parameters[i];
+            }
+
+            return context.EvaludationEngine.EvaluateExpression(ruleFunction.Expression, localVars, context, context.FunctionNames);
+        }
+
+        throw new ArgumentException($"Invalid function name '{name}'");
     }
 
     private static object? Invoke(Delegate del, object[] args)

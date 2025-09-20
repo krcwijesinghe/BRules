@@ -15,6 +15,3 @@ public interface IRulesEngineBuilder
     IRulesEngineBuilder UseTextTemplateEngine(ITextTemplateEngine textTemplateEngine);
 }
 
-public static class RulesEngineBuilderExtensions
-{
-}

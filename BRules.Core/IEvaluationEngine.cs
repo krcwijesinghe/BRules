@@ -2,15 +2,15 @@
 
 public interface IEvaluationEngine
 {
-    Func<string, object[], object?>? FunctionEvaluator { get; set; }
-    object? EvaluateExpression(string expression, IDictionary<string, object?> parameters, IList<string>? functions = null);
+    Func<string, object[], IRulesExecutionContext, object?>? FunctionEvaluator { get; set; }
+    object? EvaluateExpression(string expression, IDictionary<string, object?> parameters, IRulesExecutionContext context, IList<string>? functions = null);
 }
 
 public static class EvaluationEngineExtensions
 {
-    public static bool EvaluateCondition(this IEvaluationEngine self, IDictionary<string, object?> parameters, string conditionExpression, IList<string>? functions = null)
+    public static bool EvaluateCondition(this IEvaluationEngine self, IDictionary<string, object?> parameters, string conditionExpression, IRulesExecutionContext context, IList<string>? functions = null)
     {
-        var conditionResult = self.EvaluateExpression(conditionExpression, parameters, functions);
+        var conditionResult = self.EvaluateExpression(conditionExpression, parameters, context, functions);
         var result = conditionResult switch
         {
             bool b => b,

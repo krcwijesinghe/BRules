@@ -2,7 +2,7 @@
 
 namespace BRules;
 
-internal class RuleExecutionContext
+internal class RuleExecutionContext: IRulesExecutionContext
 {
     public IEvaluationEngine EvaludationEngine { get; }
     public ITextTemplateEngine TextTemplateEngine { get; }
@@ -11,8 +11,9 @@ internal class RuleExecutionContext
     public IDictionary<string, object?> LocalVariables { get; }
     public IList<string> EvaluatedRules { get; } = new List<string>();
     public IDictionary<string, RuleVariable> Variables { get; }
+    public IDictionary<string, RuleFunction> Functions { get; }
+    public IList<string> ExternalFunctionNames { get; }
     public IList<string> FunctionNames { get; }
-
     public HashSet<string> ParameterNames { get; } = new();
 
     public bool IsValid { get; set; }
@@ -23,14 +24,17 @@ internal class RuleExecutionContext
                                 IRuleExecutionEngine ruleExecutionEngine,
                                 IDictionary<string, object?> parameters,
                                 IDictionary<string, RuleVariable> variables,
-                                IList<string> functionNames)
+                                IDictionary<string, RuleFunction> functions,
+                                IList<string> externalFunctionNames)
     {
         EvaludationEngine = evaluationEngine ?? throw new ArgumentNullException(nameof(evaluationEngine));
         TextTemplateEngine = textTemplateEngine ?? throw new ArgumentNullException(nameof(textTemplateEngine));
         RuleExecutionEngine = ruleExecutionEngine ?? throw new ArgumentNullException(nameof(ruleExecutionEngine)); ;
         LocalVariables = parameters.ToDictionary(p => p.Key, p => p.Value); //Clone
         Variables = variables.ToDictionary(v => v.Key, v => v.Value); //Clone
-        FunctionNames = functionNames.ToList(); //Clone
+        Functions = functions.ToDictionary(f => f.Key, f => f.Value); //Clone
+        ExternalFunctionNames = externalFunctionNames.ToList(); //Clone
+        FunctionNames = Functions.Keys.Union(ExternalFunctionNames).ToList();
         IsValid = true;
 
         ParameterNames.UnionWith(parameters.Keys);
@@ -85,6 +89,6 @@ internal class RuleExecutionContext
 
     public RuleExecutionContext Clone()
     {
-        return new RuleExecutionContext(EvaludationEngine, TextTemplateEngine, RuleExecutionEngine, LocalVariables, Variables, FunctionNames);
+        return new RuleExecutionContext(EvaludationEngine, TextTemplateEngine, RuleExecutionEngine, LocalVariables, Variables, Functions, ExternalFunctionNames);
     }
 }

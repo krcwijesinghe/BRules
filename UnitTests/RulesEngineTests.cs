@@ -790,6 +790,54 @@ namespace UnitTests
         }
 
         [TestMethod]
+        public async Task Rule_functions_should_be_evaluated_correctly()
+        {
+            var tagert = RulesEngineBuilder.Create()
+                .UseJintEvaluationEngine()
+                .AddParameter<int>("param1")
+                .AddParameter<int>("param2")
+                .AddVariable("result", 0, outputVariable: true, dataType: typeof(int))
+                .Build(
+                    new RuleSet("Global", "1.0", [
+                        new (){
+                            Name = "TestRule5",
+                            Type = "assign",
+                            Variable = "result",
+                            VariablesToPreload = ["var2"],
+                            Expression = "Func1(param2, var2)"
+                        }
+                    ],
+                    [
+                        new () { Name = "param1", Type = typeof(int).FullName! },
+                        new () { Name = "param2", Type = typeof(int).FullName! },
+                    ],
+                    simpleVariables: [
+                        new SimpleVariableDefinition() { Name = "var1", Expression = "5" },
+                        new SimpleVariableDefinition() { Name = "var2", Expression = "10" },
+                    ],
+                    ruleFunctionDefinitions: [
+                        new RuleFunctionDefinition
+                        {
+                            Name = "Func1",
+                            Parameters = ["a", "b"],
+                            VariablesToPreload = ["var1"],
+                            Expression = "a + b + param1 + var1",
+                        },
+                    ]));
+
+            var parameters = new Dictionary<string, object?>
+            {
+                { "param1", 4 },
+                { "param2", 5 },
+            };
+
+            var result = await tagert.ExecuteAsync(parameters);
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.OutputParameters.ContainsKey("result"));
+            Assert.AreEqual(24, result.OutputParameters["result"]); 
+        }
+
+        [TestMethod]
          public async Task Aggregate_variables_should_be_evaluated_correctly()
         {
             var tagert = RulesEngineBuilder.Create()
